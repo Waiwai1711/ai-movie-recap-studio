@@ -1,198 +1,295 @@
 <!DOCTYPE html>
-<html lang="my" data-theme="dark">
+<html lang="my">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI Movie Recap Studio</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0ea5e9">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepClip Studio</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Client-side FFmpeg for In-Device Rendering -->
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-  
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
-      <div class="logo-box">
-        <span class="logo-icon">🎬</span>
-        <h1 class="logo-text">AI Recap Studio</h1>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <button id="menu-toggle-btn" class="icon-btn">☰</button>
+      <div class="brand">
+        <span class="logo-box">D</span>
+        <span class="brand-name">DeepClip</span>
+        <span class="breadcrumb">STUDIO /</span>
       </div>
-      <div class="header-actions">
-        <button id="lang-toggle-btn" class="icon-btn" title="Language Switcher">🇲🇲 MY</button>
-        <button id="theme-toggle-btn" class="icon-btn" title="Theme Toggle">🌓</button>
-        <button id="logout-btn" class="icon-btn" title="Logout" style="display:none;">🚪</button>
-      </div>
-    </header>
-
-    <div id="toast" class="toast hidden"></div>
-
-    <main class="main-content">
-      <section id="auth-view" class="view">
-        <div class="card auth-card">
-          <h2 id="auth-title" class="i18n" data-en="Sign In" data-my="အကောင့်ဝင်ရန်">အကောင့်ဝင်ရန်</h2>
-          <div class="input-group">
-            <label class="i18n" data-en="Email Address" data-my="အီးမေးလ် လိပ်စာ">အီးမေးလ် လိပ်စာ</label>
-            <input type="email" id="auth-email" placeholder="name@example.com">
-          </div>
-          <div class="input-group">
-            <label class="i18n" data-en="Password" data-my="စကားဝှက်">စကားဝှက်</label>
-            <input type="password" id="auth-password" placeholder="••••••••">
-          </div>
-          <div id="invite-group" class="input-group hidden">
-            <label class="i18n" data-en="Beta Invite Code" data-my="ဘီတာ ဖိတ်ခေါ်ကုဒ်">ဘီတာ ဖိတ်ခေါ်ကုဒ်</label>
-            <input type="text" id="auth-invite" placeholder="BETAMONKEY2026">
-          </div>
-          <button id="auth-submit-btn" class="btn btn-primary w-full i18n" data-en="Login" data-my="ဝင်ရောက်မည်">ဝင်ရောက်မည်</button>
-          <div class="auth-switch">
-            <a href="#" id="toggle-auth-mode" class="i18n" data-en="Need an account? Register with Invite Code" data-my="အကောင့်အသစ် ဖွင့်ရန် နှိပ်ပါ">အကောင့်အသစ် ဖွင့်ရန် နှိပ်ပါ</a>
-          </div>
-        </div>
-      </section>
-
-      <section id="dashboard-view" class="view hidden">
-        <div class="top-bar">
-          <h2 class="i18n" data-en="My Recap Projects" data-my="ကျွန်ုပ်၏ ပရောဂျက်များ">ကျွန်ုပ်၏ ပရောဂျက်များ</h2>
-          <button id="open-new-project-btn" class="btn btn-primary">+ <span class="i18n" data-en="New Recap" data-my="အသစ်ဖန်တီးမည်">အသစ်ဖန်တီးမည်</span></button>
-        </div>
-        <div id="projects-list" class="grid-cards"></div>
-      </section>
-
-      <section id="studio-view" class="view hidden">
-        <div class="studio-header">
-          <button id="back-to-dash-btn" class="icon-btn">⬅</button>
-          <h3 id="current-project-title">Project Name</h3>
-          <span id="current-status-badge" class="badge">Created</span>
-        </div>
-
-        <div class="card">
-          <h4 class="i18n" data-en="1. Source Movie Video" data-my="၁။ မူရင်းဗီဒီယိုဖိုင် တင်သွင်းခြင်း">၁။ မူရင်းဗီဒီယိုဖိုင် တင်သွင်းခြင်း</h4>
-          <input type="file" id="video-file-picker" accept="video/mp4,video/quicktime,video/mkv" class="file-input">
-          <div id="upload-progress-container" class="progress-box hidden">
-            <div id="upload-progress-bar" class="progress-fill" style="width:0%"></div>
-            <span id="upload-progress-text">0%</span>
-          </div>
-          <button id="upload-video-btn" class="btn btn-secondary w-full i18n" data-en="Upload Video" data-my="ဗီဒီယိုဖိုင် တင်မည်">ဗီဒီယိုဖိုင် တင်မည်</button>
-        </div>
-
-        <div class="card">
-          <h4 class="i18n" data-en="2. Script & Voice Settings" data-my="၂။ စာသားနှင့် အသံဆက်တင်များ">၂။ စာသားနှင့် အသံဆက်တင်များ</h4>
-          <div class="grid-2">
-            <div class="input-group">
-              <label class="i18n" data-en="Language" data-my="ဘာသာစကား">ဘာသာစကား</label>
-              <select id="proj-language">
-                <option value="my">မြန်မာဘာသာ (Burmese)</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label class="i18n" data-en="Voice Actor" data-my="အသံရွေးချယ်မှု">အသံရွေးချယ်မှု</label>
-              <select id="proj-voice">
-                <option value="my-MM-ThihaNeural">Thiha (မြန်မာအသံ - သဘာဝကျ)</option>
-                <option value="my-MM-NilarNeural">Nilar (မြန်မာအသံ - အမျိုးသမီး)</option>
-                <option value="en-US-ChristopherNeural">Christopher (EN Male - Dramatic)</option>
-                <option value="en-US-JennyNeural">Jenny (EN Female)</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="input-group">
-              <label class="i18n" data-en="Aspect Ratio" data-my="ဗီဒီယို အချိုးအစား">ဗီဒီယို အချိုးအစား</label>
-              <select id="proj-aspect">
-                <option value="16:9">Landscape 16:9 (YouTube / Facebook)</option>
-                <option value="9:16">Portrait 9:16 (TikTok / Reels)</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label class="i18n" data-en="Burn Subtitles" data-my="စာတန်းထိုး ထည့်မည်">စာတန်းထိုး ထည့်မည်</label>
-              <input type="checkbox" id="proj-burn-subtitles" checked style="width:24px; height:24px; margin-top:8px;">
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h4 class="i18n" data-en="3. Narration Script Editor" data-my="၃။ ဇာတ်လမ်းပြော စာသား တည်းဖြတ်ခြင်း">၃။ ဇာတ်လမ်းပြော စာသား တည်းဖြတ်ခြင်း</h4>
-          <textarea id="proj-script-text" rows="5" placeholder="AI generated recap script will appear here..."></textarea>
-        </div>
-
-        <div class="card">
-          <h4 class="i18n" data-en="4. Render Movie Recap" data-my="၄။ ဇာတ်ကား အကျဉ်းချုပ် ဗီဒီယို ထုတ်ယူခြင်း">၄။ ဇာတ်ကား အကျဉ်းချုပ် ဗီဒီယို ထုတ်ယူခြင်း</h4>
-          <div id="render-job-status" class="status-box hidden">
-            <div class="status-indicator">
-              <span id="job-stage-text">Processing...</span>
-              <span id="job-percent-text">0%</span>
-            </div>
-            <div class="progress-box">
-              <div id="render-progress-bar" class="progress-fill" style="width:0%"></div>
-            </div>
-            <button id="cancel-job-btn" class="btn btn-danger btn-sm">Cancel Render</button>
-          </div>
-          <button id="start-render-btn" class="btn btn-primary w-full i18n" data-en="Start Full AI Render" data-my="AI ဗီဒီယို ဖန်တီးမှု စတင်မည်">AI ဗီဒီယို ဖန်တီးမှု စတင်မည်</button>
-          
-          <div id="download-actions" class="mt-4 hidden">
-            <a id="download-video-btn" href="#" target="_blank" class="btn btn-success w-full mb-2">⬇ <span class="i18n" data-en="Download Recap MP4" data-my="ဗီဒီယိုဖိုင် ဒေါင်းလုဒ်လုပ်မည်">ဗီဒီယိုဖိုင် ဒေါင်းလုဒ်လုပ်မည်</span></a>
-            <a id="download-srt-btn" href="#" target="_blank" class="btn btn-secondary w-full">📄 <span class="i18n" data-en="Download SRT Subtitles" data-my="စာတန်းထိုး SRT ရယူမည်">စာတန်းထိုး SRT ရယူမည်</span></a>
-          </div>
-        </div>
-      </section>
-
-      <section id="settings-view" class="view hidden">
-        <div class="card">
-          <h3 class="i18n" data-en="AssemblyAI & LLM Key Vault" data-my="API သော့ခလောက် ဆက်တင်များ">API သော့ခလောက် ဆက်တင်များ</h3>
-          <p class="text-muted i18n" data-en="Keys are encrypted at rest using AES-256-GCM." data-my="သင်၏ သော့များကို လုံခြုံစွာ AES-256 စနစ်ဖြင့် သိမ်းဆည်းပါသည်။">သင်၏ သော့များကို လုံခြုံစွာ AES-256 စနစ်ဖြင့် သိမ်းဆည်းပါသည်။</p>
-          
-          <div class="input-group">
-            <label>AssemblyAI API Key (Required for STT)</label>
-            <input type="password" id="key-assemblyai" placeholder="Paste AssemblyAI key...">
-            <span id="aai-masked-badge" class="badge mt-1">Not Set</span>
-          </div>
-
-          <div class="input-group">
-            <label>OpenAI / OpenRouter Key (Optional for Scripts)</label>
-            <input type="password" id="key-llm" placeholder="Paste LLM key...">
-            <span id="llm-masked-badge" class="badge mt-1">Not Set</span>
-          </div>
-
-          <button id="save-keys-btn" class="btn btn-primary w-full mb-2 i18n" data-en="Save Encrypted Keys" data-my="သော့များကို သိမ်းဆည်းမည်">သော့များကို သိမ်းဆည်းမည်</button>
-          <button id="test-aai-btn" class="btn btn-secondary w-full i18n" data-en="Test AssemblyAI Connection" data-my="AssemblyAI ဆက်သွယ်မှု စမ်းသပ်မည်">AssemblyAI ဆက်သွယ်မှု စမ်းသပ်မည်</button>
-        </div>
-      </section>
-    </main>
-
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-target="dashboard-view">
-        <span class="nav-icon">📁</span>
-        <span class="nav-label i18n" data-en="Projects" data-my="ပရောဂျက်">ပရောဂျက်</span>
-      </button>
-      <button class="nav-item" data-target="settings-view">
-        <span class="nav-icon">🔑</span>
-        <span class="nav-label i18n" data-en="Keys" data-my="ကီးဆက်တင်">ကီးဆက်တင်</span>
-      </button>
-    </nav>
-  </div>
-  <div style="margin: 15px; padding: 15px; border: 1px solid #334155; border-radius: 8px;">
-  <h4>⚡ Device ပေါ်တွင် တိုက်ရိုက် Render လုပ်မည်</h4>
-  <input type="file" id="local-video-input" accept="video/*" style="margin-bottom: 10px; width: 100%;" />
-  <button id="device-render-btn" style="width: 100%; background: #0284c7; padding: 10px; border: none; border-radius: 6px; color: white; font-weight: bold;">
-    🎬 ဗီဒီယို ထုတ်ယူမည် (Render)
-  </button>
-  <div id="render-progress-box" style="display: none; margin-top: 10px;">
-    <span id="render-status-text">ပြင်ဆင်နေပါသည်...</span>
-    <span id="render-percent">0%</span>
-    <div style="width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px;">
-      <div id="render-progress-bar" style="width: 0%; height: 100%; background: #38bdf8;"></div>
     </div>
-  </div>
-  <div id="download-result-box" style="display: none; margin-top: 10px; text-align: center;">
-    <a id="download-final-video" style="background: #10b981; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;" download="recap.mp4">
-      ⬇️ ဗီဒီယို ဒေါင်းလုဒ်ဆွဲရန်
-    </a>
-  </div>
-  </div>
-  
-  <script src="app.js"></script>
-</body>
-</html>
+    <div class="nav-right">
+      <span class="mode-badge" id="current-mode-label">Manual Editor</span>
+      <div class="user-avatar" id="user-avatar">D</div>
+    </div>
+  </header>
+
+  <!-- Sidebar Drawer Navigation -->
+  <aside id="sidebar-drawer" class="drawer">
+    <div class="drawer-header">
+      <div class="brand">
+        <span class="logo-box">D</span>
+        <div>
+          <div class="brand-name">DeepClip</div>
+          <small class="drawer-sub">by DeepLearn AI</small>
+        </div>
+      </div>
+      <button id="close-drawer-btn" class="icon-btn">✕</button>
+    </div>
+    <nav class="drawer-menu">
+      <a href="#" class="menu-item active" data-view="studio-view">🎬 Manual Editor <small>Free · translate with Gemini</small></a>
+      <a href="#" class="menu-item" data-view="studio-view">⚡ Auto Recap <small>1-Click Premium Auto Mode</small></a>
+      <a href="#" class="menu-item" data-view="jobs-view">📁 Job History <small>Saved Videos</small></a>
+      <a href="#" class="menu-item" data-view="usage-view">📊 Usage <small>Videos, minutes, credits</small></a>
+      <a href="#" class="menu-item" data-view="settings-view">⚙️ Settings <small>Defaults · Brand · API Keys</small></a>
+    </nav>
+    <div class="drawer-footer">
+      <div class="credit-box">
+        <div>Credits left: <b id="credit-count">0</b></div>
+        <small>= 0 min of Auto video</small>
+        <button class="upgrade-btn">⚡ Upgrade</button>
+      </div>
+      <div class="user-card">
+        <div class="user-avatar small">M</div>
+        <div class="user-info">
+          <div class="user-name">User Account</div>
+          <div class="user-email" id="display-user-email">local@device.app</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div id="backdrop" class="backdrop"></div>
+
+  <!-- Main Workspace -->
+  <main class="main-container">
+
+    <!-- STUDIO VIEW -->
+    <section id="studio-view" class="view-panel active">
+      
+      <!-- Video Upload / URL Section -->
+      <div class="upload-dropzone">
+        <input type="file" id="local-video-input" accept="video/*" class="file-input-hidden" />
+        <label for="local-video-input" class="dropzone-label">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-title">Choose video file</div>
+          <div class="upload-sub">MP4, MOV, MKV · up to 15 min</div>
+        </label>
+        <div class="link-divider"><span>Or paste a link</span></div>
+        <div class="url-input-group">
+          <input type="text" id="video-url-input" placeholder="Paste a TikTok / YouTube link" />
+          <button id="paste-btn" class="btn btn-outline">📋 Paste</button>
+          <button id="load-url-btn" class="btn btn-dark">🔗 Load</button>
+        </div>
+        <div class="supported-tags">
+          <small>Supported links:</small>
+          <span class="badge">YouTube</span>
+          <span class="badge">TikTok</span>
+        </div>
+      </div>
+
+      <!-- Studio Tabs Header -->
+      <div class="tabs-header">
+        <button class="tab-btn active" data-tab="tab-video">Video</button>
+        <button class="tab-btn" data-tab="tab-voice">Voice</button>
+        <button class="tab-btn" data-tab="tab-captions">Captions</button>
+        <button class="tab-btn" data-tab="tab-extras">Extras</button>
+        <button class="tab-btn" data-tab="tab-gemini">Gemini</button>
+      </div>
+
+      <!-- TAB 1: VIDEO SETTINGS -->
+      <div id="tab-video" class="tab-pane active">
+        <div class="form-group">
+          <label class="section-label">Mode</label>
+          <div class="radio-card selected">
+            <input type="radio" name="recap_mode" id="mode_recap" checked />
+            <label for="mode_recap">
+              <b>AI Recap</b>
+              <small>Narrates only where people talk</small>
+            </label>
+          </div>
+          <div class="radio-card">
+            <input type="radio" name="recap_mode" id="mode_pro" />
+            <label for="mode_pro">
+              <b>Pro AI Recap <span class="badge-pro">PRO</span></b>
+              <small>Skips silent scenes, narrates nonstop</small>
+            </label>
+          </div>
+          <div class="radio-card">
+            <input type="radio" name="recap_mode" id="mode_sub" />
+            <label for="mode_sub">
+              <b>Subtitle Mode</b>
+              <small>Faithful translation with captions</small>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="section-label">Ratio</label>
+          <div class="btn-group" id="ratio-btn-group">
+            <button class="btn btn-choice" data-val="original">Original</button>
+            <button class="btn btn-choice active" data-val="9:16">9:16</button>
+            <button class="btn btn-choice" data-val="3:4">3:4</button>
+            <button class="btn btn-choice" data-val="16:9">16:9</button>
+            <button class="btn btn-choice" data-val="1:1">1:1</button>
+          </div>
+        </div>
+
+        <div class="form-group row-between">
+          <div>
+            <b>TikTok HD (1080p)</b>
+            <small class="block-sub">Sharper for TikTok · slower render · bigger file</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="tiktok-hd-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="btn-group split-group">
+          <button class="btn btn-choice active" id="btn-crop">Crop (fill)</button>
+          <button class="btn btn-choice" id="btn-pad">Pad (blur bg)</button>
+        </div>
+
+        <div class="form-group">
+          <label class="section-label">Output language</label>
+          <div class="btn-group">
+            <button class="btn btn-choice active" data-lang="my">မြန်မာ</button>
+            <button class="btn btn-choice" data-lang="en">English</button>
+            <button class="btn btn-choice" data-lang="th">ไทย</button>
+          </div>
+        </div>
+
+        <div class="form-group row-between">
+          <b>Mirror (flip left/right)</b>
+          <input type="checkbox" id="mirror-toggle" />
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Zoom</label>
+            <span id="zoom-val" class="accent-text">100%</span>
+          </div>
+          <input type="range" id="zoom-slider" min="100" max="150" value="100" class="range-slider" />
+        </div>
+      </div>
+
+      <!-- TAB 2: VOICE SETTINGS -->
+      <div id="tab-voice" class="tab-pane">
+        <div class="form-group">
+          <label class="section-label">Choose voice</label>
+          <div class="select-card">
+            <div class="voice-avatar">T</div>
+            <div class="voice-details">
+              <b>Thiha</b>
+              <small>Male · Myanmar (Burma)</small>
+            </div>
+            <button class="btn-play-preview">▶</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Speed</label>
+            <span id="speed-val" class="accent-text">+0%</span>
+          </div>
+          <input type="range" id="speed-slider" min="-50" max="50" value="0" class="range-slider" />
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Pitch</label>
+            <span id="pitch-val" class="accent-text">+0Hz</span>
+          </div>
+          <input type="range" id="pitch-slider" min="-50" max="50" value="0" class="range-slider" />
+        </div>
+      </div>
+
+      <!-- TAB 3: CAPTIONS SETTINGS -->
+      <div id="tab-captions" class="tab-pane">
+        <div class="form-group row-between">
+          <div>
+            <b>Full-width band</b>
+            <small class="block-sub">cover source subtitles</small>
+          </div>
+          <input type="checkbox" id="band-cover-toggle" />
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Captions</label>
+            <input type="checkbox" id="captions-enable" checked />
+          </div>
+          <!-- Live Preview Box -->
+          <div class="caption-preview-stage">
+            <div id="caption-preview-text" class="preview-text">ဒီနေရာမှာ စာတန်းထိုး ပေါ်မယ်</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="section-label">Font</label>
+          <select id="caption-font-select" class="form-select">
+            <option value="Noto Sans Myanmar">Noto Sans Myanmar (regular)</option>
+            <option value="Pyidaungsu">Pyidaungsu</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Font size</label>
+            <span id="font-size-val" class="accent-text">18px</span>
+          </div>
+          <input type="range" id="font-size-slider" min="12" max="36" value="18" class="range-slider" />
+        </div>
+
+        <div class="form-group">
+          <label class="section-label">Text color</label>
+          <div class="color-palette" id="color-palette">
+            <button class="color-swatch" style="background:#ffffff;" data-color="#ffffff"></button>
+            <button class="color-swatch active" style="background:#facc15;" data-color="#facc15"></button>
+            <button class="color-swatch" style="background:#38bdf8;" data-color="#38bdf8"></button>
+            <button class="color-swatch" style="background:#f472b6;" data-color="#f472b6"></button>
+            <button class="color-swatch" style="background:#4ade80;" data-color="#4ade80"></button>
+            <button class="color-swatch" style="background:#fb923c;" data-color="#fb923c"></button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="row-between">
+            <label class="section-label">Vertical position</label>
+            <span id="pos-val" class="accent-text">79%</span>
+          </div>
+          <input type="range" id="pos-slider" min="10" max="95" value="79" class="range-slider" />
+        </div>
+      </div>
+
+      <!-- TAB 4: EXTRAS -->
+      <div id="tab-extras" class="tab-pane">
+        <div class="form-group row-between">
+          <b>Watermark text</b>
+          <input type="checkbox" id="watermark-toggle" />
+        </div>
+        <div class="form-group row-between">
+          <b>Logo (circle)</b>
+          <input type="checkbox" id="logo-toggle" />
+        </div>
+        <div class="form-group">
+          <div class="row-between">
+            <b>AI caption + hashtags</b>
+            <input type="checkbox" id="hashtags-toggle" checked />
+          </div>
+          <input type="text" placeholder="Main hashtags (empty = default)" class="form-control" />
+        </div>
+        <div class="form-group row-between">
+          <span>Add #fyp</span>
+          <input type="checkbox" checked />
+        </div>
+      </div>
+
+      <!-- TAB 5: GEMINI WORKFLOW -->
+      <div id="tab-gemini" class="tab-pane">
+        <div class="gemini-card">
+          <h4>Translate with Gemini</h4>
+          <p class="
