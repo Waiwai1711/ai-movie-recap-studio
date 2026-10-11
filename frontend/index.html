@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- Client-side FFmpeg for In-Device Rendering -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  
 </head>
 <body>
   <div id="app">
@@ -170,6 +173,26 @@
       </button>
     </nav>
   </div>
+  <div style="margin: 15px; padding: 15px; border: 1px solid #334155; border-radius: 8px;">
+  <h4>⚡ Device ပေါ်တွင် တိုက်ရိုက် Render လုပ်မည်</h4>
+  <input type="file" id="local-video-input" accept="video/*" style="margin-bottom: 10px; width: 100%;" />
+  <button id="device-render-btn" style="width: 100%; background: #0284c7; padding: 10px; border: none; border-radius: 6px; color: white; font-weight: bold;">
+    🎬 ဗီဒီယို ထုတ်ယူမည် (Render)
+  </button>
+  <div id="render-progress-box" style="display: none; margin-top: 10px;">
+    <span id="render-status-text">ပြင်ဆင်နေပါသည်...</span>
+    <span id="render-percent">0%</span>
+    <div style="width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px;">
+      <div id="render-progress-bar" style="width: 0%; height: 100%; background: #38bdf8;"></div>
+    </div>
+  </div>
+  <div id="download-result-box" style="display: none; margin-top: 10px; text-align: center;">
+    <a id="download-final-video" style="background: #10b981; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;" download="recap.mp4">
+      ⬇️ ဗီဒီယို ဒေါင်းလုဒ်ဆွဲရန်
+    </a>
+  </div>
+  </div>
+  
   <script src="app.js"></script>
 </body>
 </html>
