@@ -4,7 +4,8 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import engine, Base
 from app.routers import auth, projects, jobs, media, settings as settings_router, admin
-
+from app.database import engine, Base
+import app.models
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
