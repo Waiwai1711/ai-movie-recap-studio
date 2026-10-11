@@ -2,9 +2,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(console.error);
 }
 
-const API_BASE = window.location.origin.includes('pages.dev')
-  ? 'https://ai-recap-backend.onrender.com'
-  : '';
+const API_BASE = 'https://ai-recap-backend.onrender.com';
 
 
 let currentLanguage = 'my';
