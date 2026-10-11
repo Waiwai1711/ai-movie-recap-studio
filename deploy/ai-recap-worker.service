@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Movie Recap Studio Worker Daemon
+After=network.target ai-recap-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/AI_Movie_Recap_Studio/worker
+EnvironmentFile=/opt/AI_Movie_Recap_Studio/.env
+ExecStart=/opt/AI_Movie_Recap_Studio/venv/bin/python worker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
