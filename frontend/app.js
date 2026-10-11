@@ -3,8 +3,9 @@ if ('serviceWorker' in navigator) {
 }
 
 const API_BASE = window.location.origin.includes('pages.dev')
-  ? 'https://api.yourdomain.com'
+  ? 'https://ai-recap-backend.onrender.com'
   : '';
+
 
 let currentLanguage = 'my';
 let activeProjectId = null;
