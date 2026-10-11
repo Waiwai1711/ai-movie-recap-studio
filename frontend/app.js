@@ -1,126 +1,160 @@
-const API_BASE = '';
+// Drawer Toggle
+const drawer = document.getElementById('sidebar-drawer');
+const backdrop = document.getElementById('backdrop');
 
-// Helper Functions
-function showToast(msg) {
-  alert(msg); // ဖုန်းပေါ်တွင် သေချာပေါက် မြင်ရစေရန် တိုက်ရိုက် Alert သုံးထားပါသည်
+document.getElementById('menu-toggle-btn')?.addEventListener('click', () => {
+  drawer.classList.add('open');
+  backdrop.classList.add('open');
+});
+
+const closeDrawer = () => {
+  drawer.classList.remove('open');
+  backdrop.classList.remove('open');
+};
+
+document.getElementById('close-drawer-btn')?.addEventListener('click', closeDrawer);
+backdrop?.addEventListener('click', closeDrawer);
+
+// View Switcher (Studio vs Settings)
+document.querySelectorAll('.drawer-menu .menu-item').forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.drawer-menu .menu-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    
+    const target = item.getAttribute('data-view');
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(target)?.classList.add('active');
+    closeDrawer();
+  });
+});
+
+// Studio Tab Switching (Video, Voice, Captions, Extras, Gemini)
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    
+    btn.classList.add('active');
+    const tabId = btn.getAttribute('data-tab');
+    document.getElementById(tabId)?.classList.add('active');
+  });
+});
+
+// Interactive Sliders Update
+document.getElementById('zoom-slider')?.addEventListener('input', (e) => {
+  document.getElementById('zoom-val').innerText = `${e.target.value}%`;
+});
+
+document.getElementById('speed-slider')?.addEventListener('input', (e) => {
+  const v = e.target.value;
+  document.getElementById('speed-val').innerText = `${v >= 0 ? '+' : ''}${v}%`;
+});
+
+document.getElementById('pitch-slider')?.addEventListener('input', (e) => {
+  const v = e.target.value;
+  document.getElementById('pitch-val').innerText = `${v >= 0 ? '+' : ''}${v}Hz`;
+});
+
+document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
+  const sz = e.target.value;
+  document.getElementById('font-size-val').innerText = `${sz}px`;
+  document.getElementById('caption-preview-text').style.fontSize = `${sz}px`;
+});
+
+document.getElementById('pos-slider')?.addEventListener('input', (e) => {
+  document.getElementById('pos-val').innerText = `${e.target.value}%`;
+});
+
+// Color Swatches
+document.querySelectorAll('.color-swatch').forEach(swatch => {
+  swatch.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    swatch.classList.add('active');
+    const color = swatch.getAttribute('data-color');
+    document.getElementById('caption-preview-text').style.color = color;
+  });
+});
+
+// Radio & Choice Button Groups
+document.querySelectorAll('.btn-group .btn-choice').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ==========================================
+// CLIENT-SIDE (IN-DEVICE) RENDER ENGINE
+// ==========================================
+let ffmpegInstance = null;
+
+async function loadFFmpeg() {
+  if (ffmpegInstance) return ffmpegInstance;
+  const { createFFmpeg } = FFmpeg;
+  ffmpegInstance = createFFmpeg({
+    log: true,
+    corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+  });
+  await ffmpegInstance.load();
+  return ffmpegInstance;
 }
 
-function switchView(viewId) {
-  const views = ['auth-view', 'projects-view', 'studio-view', 'keys-view'];
-  views.forEach(v => {
-    const el = document.getElementById(v);
-    if (el) el.style.display = (v === viewId) ? 'block' : 'none';
-  });
+document.getElementById('device-render-btn')?.addEventListener('click', async () => {
+  const fileInput = document.getElementById('local-video-input');
+  const videoFile = fileInput?.files[0];
   
-  // Update Bottom Nav active state
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    if (btn.getAttribute('data-view') === viewId) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-}
-
-// 1. Navigation Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    switchView('auth-view');
-  } else {
-    switchView('keys-view');
-    loadKeysStatus();
+  if (!videoFile) {
+    return alert('ကျေးဇူးပြု၍ "Choose video file" ကို နှိပ်ပြီး ဖုန်းထဲမှ မူရင်းဗီဒီယိုကို အရင်ရွေးပါ');
   }
 
-  // Bottom Nav Bar Clicks
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const targetView = btn.getAttribute('data-view');
-      if (targetView) switchView(targetView);
-    });
-  });
-
-  // Logout Button
-  document.getElementById('logout-btn')?.addEventListener('click', () => {
-    localStorage.removeItem('token');
-    switchView('auth-view');
-    showToast('အကောင့်ထွက်ပြီးပါပြီ');
-  });
-});
-
-// 2. Keys Management
-async function loadKeysStatus() {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/settings/keys`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const aaiStatus = document.getElementById('assemblyai-status');
-      const llmStatus = document.getElementById('llm-status');
-      if (aaiStatus) aaiStatus.innerText = data.has_assemblyai_key ? '✅ Active' : 'Not Set';
-      if (llmStatus) llmStatus.innerText = data.has_llm_key ? '✅ Active' : 'Not Set';
-    }
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Save Keys Click
-document.getElementById('save-keys-btn')?.addEventListener('click', async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return showToast('အရင်ဆုံး Login ဝင်ပါ');
-
-  const aaiKey = document.getElementById('assemblyai-key-input')?.value.trim();
-  const llmKey = document.getElementById('llm-key-input')?.value.trim();
-
-  if (!aaiKey && !llmKey) {
-    return showToast('Key တစ်ခုခု ရိုက်ထည့်ပေးပါ');
-  }
+  const pCard = document.getElementById('render-progress-card');
+  const sText = document.getElementById('render-status-text');
+  const pText = document.getElementById('render-percent');
+  const pBar = document.getElementById('render-progress-bar');
+  const dBox = document.getElementById('download-result-box');
+  const dLink = document.getElementById('download-final-video');
 
   try {
-    const payload = {};
-    if (aaiKey) payload.assemblyai_key = aaiKey;
-    if (llmKey) payload.llm_key = llmKey;
+    pCard.style.display = 'block';
+    dBox.style.display = 'none';
+    sText.innerText = 'FFmpeg Engine အား ဖုန်းထဲသို့ ထည့်သွင်းနေပါသည်...';
+    pBar.style.width = '10%';
+    pText.innerText = '10%';
 
-    const res = await fetch(`${API_BASE}/api/settings/keys`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
+    const ffmpeg = await loadFFmpeg();
+
+    ffmpeg.setProgress(({ ratio }) => {
+      const p = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      pBar.style.width = `${p}%`;
+      pText.innerText = `${p}%`;
     });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Key သိမ်းဆည်း၍ မရပါ');
-    showToast('Key သိမ်းဆည်းပြီးပါပြီ!');
-    loadKeysStatus();
+    sText.innerText = 'ဗီဒီယိုဖိုင်အား ဖတ်ယူနေပါသည်...';
+    const { fetchFile } = FFmpeg;
+    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
+
+    sText.innerText = 'ဖုန်းပေါ်တွင် ဗီဒီယို ဖြတ်ညှပ်ကပ် စတင်ထုတ်ယူနေပါသည်...';
+    
+    // Fast stream copy (Server RAM မသုံးဘဲ ဖုန်းထဲတွင် စက္ကန့်ပိုင်းအတွင်း ပြီးစီးပါသည်)
+    await ffmpeg.run('-i', 'input.mp4', '-c', 'copy', 'output.mp4');
+
+    sText.innerText = 'ဗီဒီယို အောင်မြင်စွာ ထွက်ရှိပါပြီ!';
+    pBar.style.width = '100%';
+    pText.innerText = '100%';
+
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    dLink.href = URL.createObjectURL(blob);
+    dLink.download = `Recap_${Date.now()}.mp4`;
+    dBox.style.display = 'block';
+
+    ffmpeg.FS('unlink', 'input.mp4');
+    ffmpeg.FS('unlink', 'output.mp4');
+
   } catch (err) {
-    showToast('Error: ' + err.message);
+    alert('Render Error: ' + err.message);
+    sText.innerText = 'အမှားဖြစ်သွားပါသည်: ' + err.message;
   }
 });
 
-// Test AssemblyAI Key Click
-document.getElementById('test-assemblyai-btn')?.addEventListener('click', async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return showToast('အရင်ဆုံး Login ဝင်ပါ');
-
-  try {
-    showToast('AssemblyAI နှင့် စမ်းသပ်ချိတ်ဆက်နေပါသည်...');
-    const res = await fetch(`${API_BASE}/api/settings/test-assemblyai`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (res.ok && data.status === 'ok') {
-      showToast('AssemblyAI ချိတ်ဆက်မှု အောင်မြင်ပါသည်!');
-    } else {
-      showToast('ချိတ်ဆက်မှု မအောင်မြင်ပါ: ' + (data.detail || 'Invalid Key'));
-    }
-  } catch (err) {
-    showToast('Error: ' + err.message);
-  }
-});
