@@ -42,3 +42,14 @@ app.include_router(admin.router)
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": settings.APP_NAME, "env": settings.ENV}
+import os
+from fastapi.staticfiles import StaticFiles
+
+# Serve Frontend UI directly
+frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+if not os.path.exists(frontend_dir):
+    frontend_dir = "/app/frontend"
+
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+    
