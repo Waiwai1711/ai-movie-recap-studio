@@ -240,3 +240,41 @@ if (localStorage.getItem('token')) {
 } else {
   switchView('auth-view');
 }
+// New Project Button Handler
+document.getElementById('open-new-project-btn')?.addEventListener('click', async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showToast('ကျေးဇူးပြု၍ အရင်ဆုံး Login ဝင်ပါ');
+    return switchView('auth-view');
+  }
+
+  const title = prompt('Project အမည် ရိုက်ထည့်ပါ:');
+  if (!title || !title.trim()) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/projects/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        title: title.trim(),
+        target_language: 'my',
+        aspect_ratio: '16:9',
+        target_duration_minutes: 3,
+        burn_subtitles: true,
+        voice_name: 'my-MM-ThihaNeural'
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Project ဖန်တီး၍ မရပါ');
+
+    showToast('Project အသစ် ဖန်တီးပြီးပါပြီ');
+    loadProjects();
+    openStudio(data.id);
+  } catch (err) {
+    showToast(err.message);
+  }
+});
