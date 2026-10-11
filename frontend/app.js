@@ -277,3 +277,59 @@ document.getElementById('open-new-project-btn')?.addEventListener('click', async
     showToast(err.message);
   }
 });
+let ffmpegInstance = null;
+async function loadFFmpeg() {
+  if (ffmpegInstance) return ffmpegInstance;
+  const { createFFmpeg } = FFmpeg;
+  ffmpegInstance = createFFmpeg({
+    log: true,
+    corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+  });
+  await ffmpegInstance.load();
+  return ffmpegInstance;
+}
+
+document.getElementById('device-render-btn')?.addEventListener('click', async () => {
+  const fileInput = document.getElementById('local-video-input');
+  const videoFile = fileInput?.files[0];
+  if (!videoFile) return alert('ဗီဒီယိုဖိုင်ကို အရင်ရွေးချယ်ပါ');
+
+  const pBox = document.getElementById('render-progress-box');
+  const sText = document.getElementById('render-status-text');
+  const pText = document.getElementById('render-percent');
+  const pBar = document.getElementById('render-progress-bar');
+  const dBox = document.getElementById('download-result-box');
+  const dLink = document.getElementById('download-final-video');
+
+  try {
+    pBox.style.display = 'block';
+    dBox.style.display = 'none';
+    sText.innerText = 'FFmpeg စတင်နေပါသည်...';
+
+    const ffmpeg = await loadFFmpeg();
+    ffmpeg.setProgress(({ ratio }) => {
+      const p = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      pBar.style.width = `${p}%`;
+      pText.innerText = `${p}%`;
+    });
+
+    sText.innerText = 'ဗီဒီယို ထည့်သွင်းနေပါသည်...';
+    const { fetchFile } = FFmpeg;
+    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
+
+    sText.innerText = 'ဗီဒီယို အချောသတ် Render လုပ်နေပါသည်...';
+    await ffmpeg.run('-i', 'input.mp4', '-c', 'copy', 'output.mp4');
+
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    dLink.href = URL.createObjectURL(blob);
+    dLink.download = `Recap_${Date.now()}.mp4`;
+    dBox.style.display = 'block';
+    sText.innerText = 'ပြီးစီးပါပြီ!';
+
+    ffmpeg.FS('unlink', 'input.mp4');
+    ffmpeg.FS('unlink', 'output.mp4');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+});
